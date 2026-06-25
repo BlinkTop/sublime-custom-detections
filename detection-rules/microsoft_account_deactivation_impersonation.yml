@@ -1,7 +1,7 @@
 name: "Microsoft account deactivation brand impersonation"
 description: "Detects Microsoft account deactivation themed messages where Microsoft branding appears in the sender display name, subject, or body, but the sender root domain is not Microsoft-owned. Tuned for deactivation lures using suspicious sender local-parts or IPFS/dweb links."
 type: "rule"
-severity: "medium"
+severity: "high"
 source: |
   type.inbound
   and sender.email.domain.root_domain not in (
