@@ -1,5 +1,5 @@
 name: "SharePoint impersonation with weak authentication"
-description: "Detects inbound messages that impersonate SharePoint, come from a non-Microsoft sender domain, show weak sender authentication, and link away from Microsoft-owned domains."
+description: "Detects inbound messages that impersonate SharePoint, come from a non-Microsoft sender domain, show weak DMARC or SPF authentication, and link away from Microsoft-owned domains."
 type: "rule"
 severity: "medium"
 attack_types:
@@ -33,7 +33,6 @@ source: |
   )
   and (
     not headers.auth_summary.dmarc.pass
-    or not headers.auth_summary.dkim.pass
     or not headers.auth_summary.spf.pass
   )
   and any(body.links,
