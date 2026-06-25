@@ -1,0 +1,49 @@
+name: "Microsoft account deactivation brand impersonation"
+description: "Detects Microsoft account deactivation themed messages where Microsoft branding appears in the sender display name, subject, or body, but the sender root domain is not Microsoft-owned. Tuned for deactivation lures using suspicious sender local-parts or IPFS/dweb links."
+type: rule
+severity: medium
+source: |
+  type.inbound
+  and sender.email.domain.root_domain not in (
+    "microsoft.com",
+    "microsoftonline.com",
+    "office.com",
+    "office365.com",
+    "outlook.com",
+    "live.com"
+  )
+  and (
+    strings.icontains(sender.display_name, "microsoft")
+    or strings.icontains(subject.subject, "microsoft")
+    or strings.icontains(body.current_thread.text, "microsoft")
+  )
+  and (
+    strings.icontains(subject.subject, "deactivation", "de-activation")
+    or strings.icontains(body.current_thread.text, "deactivation", "de-activation", "cancel this request")
+  )
+  and (
+    strings.icontains(sender.email.local_part, "microsoft")
+    or any(body.links,
+      .href_url.domain.root_domain in ("dweb.link", "ipfs.io")
+      or strings.icontains(.href_url.url, "ipfs")
+    )
+  )
+attack_types:
+  - Credential Phishing
+tactics_and_techniques:
+  - Impersonation: Brand
+  - Social engineering
+  - IPFS
+detection_methods:
+  - Header analysis
+  - Sender analysis
+  - Content analysis
+  - URL analysis
+tags:
+  - brand-impersonation
+  - microsoft
+  - account-deactivation
+false_positives:
+  - "Legitimate third-party notifications that mention Microsoft account deactivation and link to IPFS/dweb infrastructure are unlikely, but any approved Microsoft service provider domains should be allowlisted if observed."
+authors:
+  - name: "Chris Salvatore"
