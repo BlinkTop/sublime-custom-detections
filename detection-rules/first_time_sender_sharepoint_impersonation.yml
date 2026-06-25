@@ -1,0 +1,49 @@
+name: "First-time sender SharePoint impersonation with weak authentication"
+description: "Detects inbound messages from a first-time, unsolicited sender that impersonate SharePoint in the body, lack DMARC-aligned sender authentication, and link away from Microsoft-owned domains."
+type: "rule"
+severity: "medium"
+attack_types:
+  - "Credential Phishing"
+tactics_and_techniques:
+  - "Impersonation: Brand"
+  - "Social engineering"
+detection_methods:
+  - "Sender analysis"
+  - "Content analysis"
+  - "Header analysis"
+  - "URL analysis"
+tags:
+  - "sharepoint"
+  - "first-time-sender"
+source: |
+  type.inbound
+  and profile.by_sender().prevalence in ("new")
+  and not profile.by_sender().solicited
+  and any([body.plain.raw, body.html.inner_text, body.current_thread.text],
+    strings.icontains(., "sharepoint")
+  )
+  and sender.email.domain.root_domain not in (
+    "microsoft.com",
+    "office.com",
+    "office365.com",
+    "sharepoint.com",
+    "sharepointonline.com",
+    "onmicrosoft.com"
+  )
+  and not headers.auth_summary.dmarc.pass
+  and (
+    not headers.auth_summary.dkim.pass
+    or not headers.auth_summary.spf.pass
+  )
+  and any(body.links,
+    .href_url.domain.root_domain not in (
+      "microsoft.com",
+      "office.com",
+      "office365.com",
+      "sharepoint.com",
+      "sharepointonline.com",
+      "onmicrosoft.com"
+    )
+    and .href_url.domain.root_domain != sender.email.domain.root_domain
+  )
+id: "65f25843-c40d-4973-be38-c7b7d7e19a31"
