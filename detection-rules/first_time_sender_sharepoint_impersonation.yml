@@ -30,12 +30,7 @@ source: |
     "sharepointonline.com",
     "onmicrosoft.com"
   )
-  and not headers.auth_summary.dmarc.pass
-  and (
-    not headers.auth_summary.dkim.pass
-    or not headers.auth_summary.spf.pass
-  )
-  and any(body.links,
+   and any(body.links,
     .href_url.domain.root_domain not in (
       "microsoft.com",
       "office.com",
