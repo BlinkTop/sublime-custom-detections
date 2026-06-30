@@ -1,5 +1,5 @@
 name: "VIP impersonation"
-description: "Detects executive display-name impersonation using exact and typo-tolerant demo VIP name matching, anomalous sender behavior, NLU BEC/procurement indicators, and a PDF attachment."
+description: "Detects executive display-name impersonation using exact and typo-tolerant demo VIP name matching, anomalous sender behavior, and NLU BEC/procurement indicators."
 type: "rule"
 severity: "medium"
 attack_types:
