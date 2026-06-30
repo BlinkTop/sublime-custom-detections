@@ -82,7 +82,3 @@ source: |
     "pfizer.com",
     "pfizer.be"
   )
-  and any(attachments,
-    .file_extension == "pdf"
-  )
-id: "32765a6f-7e67-456b-9df3-4e6d285088fa"
