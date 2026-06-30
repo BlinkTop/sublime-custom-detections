@@ -1,0 +1,35 @@
+name: "Traffic infraction lure from new sender with attachment bundle"
+description: "Detects traffic infraction lures from new or outlier senders that include a suspicious ZIP/PDF/image attachment bundle and password-style body language."
+type: "rule"
+severity: "medium"
+attack_types:
+  - "Malware/Ransomware"
+tactics_and_techniques:
+  - "Social engineering"
+detection_methods:
+  - "Sender analysis"
+  - "File analysis"
+  - "Content analysis"
+tags:
+  - "traffic-infraction"
+  - "archive"
+  - "attachment"
+  - "new-sender"
+source: |
+  type.inbound
+  and profile.by_sender().prevalence in ("new", "outlier")
+  and not profile.by_sender().solicited
+  and any(attachments,
+    .file_extension == "zip"
+    and (
+      .content_type == "application/zip"
+      or any(file.explode(.),
+        any(.scan.strings.strings,
+          strings.icontains(., "infraccion")
+          or strings.icontains(., "boleta")
+          or strings.icontains(., "contrasena")
+        )
+      )
+    )
+  )
+id: "06b73d7e-9e3e-4127-9ad7-cd38f50b4ede"
