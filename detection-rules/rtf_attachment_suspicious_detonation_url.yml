@@ -1,0 +1,61 @@
+name: "RTF attachment detonation with suspicious URL"
+description: "Detects inbound RTF files or archives containing RTF content that detonate to suspicious external URLs."
+type: "rule"
+severity: "high"
+attack_types:
+  - "Credential Phishing"
+  - "Malware/Ransomware"
+tactics_and_techniques:
+  - "Brand impersonation"
+  - "Social engineering"
+detection_methods:
+  - "File analysis"
+  - "Sender analysis"
+tags:
+  - "rtf"
+  - "attachment"
+  - "external-link"
+source: |
+  type.inbound
+  and any(attachments,
+    (
+      .file_extension in~ $file_extensions_common_archives
+      or .file_type == "rtf"
+      or .file_extension == "rtf"
+    )
+    and any(file.explode(.),
+      .flavors.mime == "text/rtf"
+      and any(.scan.url.urls,
+        .domain.valid
+        and .domain.subdomain is not null
+        and not (
+          strings.ends_with(.url, "jpeg")
+          or strings.ends_with(.url, "jpg")
+          or strings.ends_with(.url, "png")
+          or strings.ends_with(.url, "gif")
+        )
+        and (
+          (
+            .domain.root_domain not in $tranco_1m
+            and .domain.root_domain not in $umbrella_1m
+          )
+          or .domain.root_domain in $free_file_hosts
+          or .domain.root_domain in $free_subdomain_hosts
+          or .domain.root_domain in $url_shorteners
+          or .domain.root_domain in $social_landing_hosts
+          or (
+            any(recipients.to,
+              strings.icontains(..url, .email.email)
+            )
+            and (
+              .domain.root_domain not in $tranco_1m
+              and .domain.root_domain not in $umbrella_1m
+            )
+          )
+        )
+      )
+    )
+  )
+  and not profile.by_sender().solicited
+  and not profile.by_sender().any_messages_benign
+id: "55a1f3fa-6ce0-4d98-9f85-c8b2822fc047"
