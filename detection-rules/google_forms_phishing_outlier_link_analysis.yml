@@ -1,0 +1,69 @@
+name: "Google Forms phishing from anomalous sender"
+description: "Detects Google Forms lures from new or outlier senders where the form link is paired with suspicious LinkAnalysis output or phishing-style body context."
+type: "rule"
+severity: "medium"
+attack_types:
+  - "Credential Phishing"
+tactics_and_techniques:
+  - "Social engineering"
+  - "Free file host"
+detection_methods:
+  - "Sender analysis"
+  - "URL analysis"
+  - "Content analysis"
+tags:
+  - "google-forms"
+  - "sender-prevalence"
+  - "link-analysis"
+source: |
+  type.inbound
+  and profile.by_sender().prevalence in ("new", "outlier")
+  and not profile.by_sender().solicited
+  and not (
+    headers.auth_summary.dmarc.pass
+    and sender.email.domain.root_domain in (
+      "google.com",
+      "googlemail.com"
+    )
+  )
+  and any(body.links,
+    (
+      .href_url.domain.domain == "forms.gle"
+      or (
+        .href_url.domain.domain == "docs.google.com"
+        and any([body.plain.raw, body.html.inner_text, body.current_thread.text],
+          strings.icontains(., "docs.google.com/forms")
+          or strings.icontains(., "Google Forms")
+        )
+      )
+    )
+    and (
+      any([ml.link_analysis(., mode="aggressive")],
+        .credphish.contains_login
+        or .credphish.contains_captcha
+        or strings.icontains(.final_dom.display_text, "password")
+        or strings.icontains(.final_dom.display_text, "email address")
+        or strings.icontains(.final_dom.display_text, "payment")
+        or strings.icontains(.final_dom.display_text, "account")
+      )
+      or any([subject.subject, body.plain.raw, body.html.inner_text, body.current_thread.text],
+        (
+          strings.icontains(., "confirm")
+          or strings.icontains(., "complete")
+          or strings.icontains(., "fill out")
+          or strings.icontains(., "enter")
+          or strings.icontains(., "access")
+        )
+        and (
+          strings.icontains(., "reservation")
+          or strings.icontains(., "payment")
+          or strings.icontains(., "account")
+          or strings.icontains(., "balance")
+          or strings.icontains(., "score")
+          or strings.icontains(., "process")
+          or strings.icontains(., "information")
+        )
+      )
+    )
+  )
+id: "6d4e1305-87e4-49ce-bd6e-d1ab8941f2fc"
