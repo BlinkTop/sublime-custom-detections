@@ -1,4 +1,4 @@
-name: "VIP impersonation with RFQ attachment"
+name: "VIP impersonation"
 description: "Detects executive display-name impersonation using exact and typo-tolerant demo VIP name matching, anomalous sender behavior, NLU BEC/procurement indicators, and a PDF attachment."
 type: "rule"
 severity: "medium"
