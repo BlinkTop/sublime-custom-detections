@@ -1,4 +1,4 @@
-name: "Traffic infraction lure from new sender with attachment bundle"
+name: "new sender detonate attachment"
 description: "Detects traffic infraction lures from new or outlier senders that include a suspicious ZIP/PDF/image attachment bundle and password-style body language."
 type: "rule"
 severity: "medium"
