@@ -1,0 +1,88 @@
+name: "VIP impersonation with RFQ attachment"
+description: "Detects executive display-name impersonation using exact and typo-tolerant demo VIP name matching, anomalous sender behavior, NLU BEC/procurement indicators, and a PDF attachment."
+type: "rule"
+severity: "medium"
+attack_types:
+  - "BEC/Fraud"
+tactics_and_techniques:
+  - "Impersonation: VIP"
+  - "Social engineering"
+detection_methods:
+  - "Sender analysis"
+  - "Content analysis"
+  - "File analysis"
+tags:
+  - "vip-impersonation"
+  - "rfq"
+  - "supplier-fraud"
+  - "nlu"
+source: |
+  type.inbound
+  and (
+    profile.by_sender().prevalence in ("new", "outlier")
+    or sender.email.domain.root_domain in $free_email_providers
+  )
+  and (
+    sender.display_name in~ (
+      "Mike McDermott",
+      "Maya Chen",
+      "Daniel Hart",
+      "Priya Shah",
+      "Jonathan Reed",
+      "Elena Martins",
+      "Victor Lang",
+      "Rachel Kim",
+      "Owen Pierce",
+      "Amelia Brooks"
+    )
+    or strings.ilevenshtein(sender.display_name, "Mike McDermott") <= 2
+    or strings.ilevenshtein(sender.display_name, "Maya Chen") <= 2
+    or strings.ilevenshtein(sender.display_name, "Daniel Hart") <= 2
+    or strings.ilevenshtein(sender.display_name, "Priya Shah") <= 2
+    or strings.ilevenshtein(sender.display_name, "Jonathan Reed") <= 2
+    or strings.ilevenshtein(sender.display_name, "Elena Martins") <= 2
+    or strings.ilevenshtein(sender.display_name, "Victor Lang") <= 2
+    or strings.ilevenshtein(sender.display_name, "Rachel Kim") <= 2
+    or strings.ilevenshtein(sender.display_name, "Owen Pierce") <= 2
+    or strings.ilevenshtein(sender.display_name, "Amelia Brooks") <= 2
+    or any([body.plain.raw, body.html.inner_text, body.current_thread.text],
+      strings.icontains(., "Mike McDermott")
+      or strings.icontains(., "Maya Chen")
+      or strings.icontains(., "Daniel Hart")
+      or strings.icontains(., "Priya Shah")
+      or strings.icontains(., "Jonathan Reed")
+      or strings.icontains(., "Elena Martins")
+      or strings.icontains(., "Victor Lang")
+      or strings.icontains(., "Rachel Kim")
+      or strings.icontains(., "Owen Pierce")
+      or strings.icontains(., "Amelia Brooks")
+    )
+  )
+  and any(ml.nlu_classifier(coalesce(body.html.inner_text, body.current_thread.text)).intents,
+    .name == "bec"
+  )
+  and any(ml.nlu_classifier(coalesce(body.html.inner_text, body.current_thread.text)).entities,
+    .name == "request"
+  )
+  and (
+    any(ml.nlu_classifier(coalesce(body.html.inner_text, body.current_thread.text)).entities,
+      .name == "financial"
+    )
+    or any(ml.nlu_classifier(coalesce(body.html.inner_text, body.current_thread.text)).tags,
+      .name in ("purchase_order", "payment", "invoice")
+    )
+  )
+  and any(ml.nlu_classifier(coalesce(body.html.inner_text, body.current_thread.text)).entities,
+    .name == "sender"
+  )
+  and any(ml.nlu_classifier(coalesce(body.html.inner_text, body.current_thread.text)).entities,
+    .name == "org"
+  )
+  and sender.email.domain.root_domain not in (
+    "pfizer.com",
+    "pfizer.be"
+  )
+  and any(attachments,
+    .file_extension == "pdf"
+  )
+id: "32765a6f-7e67-456b-9df3-4e6d285088fa"
