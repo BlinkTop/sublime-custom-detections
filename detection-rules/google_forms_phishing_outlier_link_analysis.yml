@@ -16,9 +16,14 @@ tags:
   - "sender-prevalence"
   - "link-analysis"
 source: |
+  // evaluate inbound messages only
   type.inbound
+
+  // require a new or outlier sender to focus on anomalous form delivery
   and profile.by_sender().prevalence in ("new", "outlier")
   and not profile.by_sender().solicited
+
+  // exclude authenticated Google-owned senders so the rule targets abuse from non-Google infrastructure
   and not (
     headers.auth_summary.dmarc.pass
     and sender.email.domain.root_domain in (
@@ -26,6 +31,8 @@ source: |
       "googlemail.com"
     )
   )
+
+  // require a Google Forms URL or docs.google.com form reference in the message body
   and any(body.links,
     (
       .href_url.domain.domain == "forms.gle"
@@ -37,6 +44,8 @@ source: |
         )
       )
     )
+
+    // require LinkAnalysis phishing evidence or body language consistent with a form-based lure
     and (
       any([ml.link_analysis(., mode="aggressive")],
         .credphish.contains_login
