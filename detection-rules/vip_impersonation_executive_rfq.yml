@@ -17,11 +17,16 @@ tags:
   - "supplier-fraud"
   - "nlu"
 source: |
+  // evaluate inbound messages only
   type.inbound
+
+  // require anomalous sender behavior or free-email infrastructure
   and (
     profile.by_sender().prevalence in ("new", "outlier")
     or sender.email.domain.root_domain in $free_email_providers
   )
+
+  // identify VIP display-name impersonation or VIP names referenced in body text
   and (
     sender.display_name in~ (
       "Mike McDermott",
@@ -58,12 +63,18 @@ source: |
       or strings.icontains(., "Amelia Brooks")
     )
   )
+
+  // require BEC intent from Sublime NLU
   and any(ml.nlu_classifier(coalesce(body.html.inner_text, body.current_thread.text)).intents,
     .name == "bec"
   )
+
+  // require request language from Sublime NLU
   and any(ml.nlu_classifier(coalesce(body.html.inner_text, body.current_thread.text)).entities,
     .name == "request"
   )
+
+  // require financial, purchase order, payment, or invoice context
   and (
     any(ml.nlu_classifier(coalesce(body.html.inner_text, body.current_thread.text)).entities,
       .name == "financial"
@@ -72,12 +83,16 @@ source: |
       .name in ("purchase_order", "payment", "invoice")
     )
   )
+
+  // require sender and organization entities to support relationship/business-context analysis
   and any(ml.nlu_classifier(coalesce(body.html.inner_text, body.current_thread.text)).entities,
     .name == "sender"
   )
   and any(ml.nlu_classifier(coalesce(body.html.inner_text, body.current_thread.text)).entities,
     .name == "org"
   )
+
+  // exclude known legitimate Pfizer sender domains for this scenario
   and sender.email.domain.root_domain not in (
     "pfizer.com",
     "pfizer.be"
