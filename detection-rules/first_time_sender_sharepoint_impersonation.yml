@@ -16,13 +16,18 @@ tags:
   - "sharepoint"
   - "brand-impersonation"
 source: |
+  // evaluate inbound messages only
   type.inbound
+
+  // identify SharePoint brand language across subject and rendered body content
   and (
     strings.icontains(subject.subject, "sharepoint")
     or strings.icontains(body.current_thread.text, "sharepoint")
     or strings.icontains(body.html.inner_text, "sharepoint")
     or strings.icontains(body.plain.raw, "sharepoint")
   )
+
+  // require the sender to be outside Microsoft and SharePoint-owned domains
   and sender.email.domain.root_domain not in (
     "microsoft.com",
     "office.com",
@@ -31,10 +36,14 @@ source: |
     "sharepointonline.com",
     "onmicrosoft.com"
   )
+
+  // require weak sender authentication to elevate confidence in the impersonation signal
   and (
     not headers.auth_summary.dmarc.pass
     or not headers.auth_summary.spf.pass
   )
+
+  // require links away from Microsoft-owned domains and away from the sender root domain
   and any(body.links,
     .href_url.domain.root_domain not in (
       "microsoft.com",
