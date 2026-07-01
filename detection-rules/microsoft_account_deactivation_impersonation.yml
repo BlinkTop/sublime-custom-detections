@@ -3,7 +3,10 @@ description: "Detects Microsoft account deactivation themed messages where Micro
 type: "rule"
 severity: "high"
 source: |
+  // evaluate inbound messages only
   type.inbound
+
+  // require the sender to be outside Microsoft-owned domains
   and sender.email.domain.root_domain not in (
     "microsoft.com",
     "microsoftonline.com",
@@ -12,15 +15,21 @@ source: |
     "outlook.com",
     "live.com"
   )
+
+  // identify Microsoft brand usage in the sender display name, subject, or body
   and (
     strings.icontains(sender.display_name, "microsoft")
     or strings.icontains(subject.subject, "microsoft")
     or strings.icontains(body.current_thread.text, "microsoft")
   )
+
+  // require account deactivation lure language
   and (
     strings.icontains(subject.subject, "deactivation", "de-activation")
     or strings.icontains(body.current_thread.text, "deactivation", "de-activation", "cancel this request")
   )
+
+  // require either Microsoft-themed sender local-part abuse or IPFS/dweb delivery infrastructure
   and (
     strings.icontains(sender.email.local_part, "microsoft")
     or any(body.links,
