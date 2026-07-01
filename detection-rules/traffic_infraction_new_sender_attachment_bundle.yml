@@ -16,11 +16,18 @@ tags:
   - "attachment"
   - "new-sender"
 source: |
+  // evaluate inbound messages only
   type.inbound
+
+  // require a new or outlier sender to focus on unsolicited attachment delivery
   and profile.by_sender().prevalence in ("new", "outlier")
   and not profile.by_sender().solicited
+
+  // require a ZIP archive attachment as the delivery vehicle
   and any(attachments,
     .file_extension == "zip"
+
+    // verify the archive type or inspect extracted content for traffic-infraction/password lure terms
     and (
       .content_type == "application/zip"
       or any(file.explode(.),
